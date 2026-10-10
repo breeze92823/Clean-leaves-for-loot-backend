@@ -1,6 +1,6 @@
 import assert from "assert";
 
-import { sanitizeProgress } from "../src/sanitize.js";
+import { sanitizeProgress, resolveTutorialStep } from "../src/sanitize.js";
 
 describe("sanitizeProgress", () => {
   it("rejects non-objects and bounds numbers", () => {
@@ -40,5 +40,27 @@ describe("sanitizeProgress", () => {
     const out = sanitizeProgress({ vacuum: "laser", aura: "../etc" })!;
     assert.ok(!("vacuum" in out));
     assert.ok(!("aura" in out));
+  });
+
+  it("bounds the tutorial step and reads a doc without one as finished", () => {
+    assert.strictEqual(sanitizeProgress({ tutorialStep: 99 })!.tutorialStep, 8);
+    assert.strictEqual(sanitizeProgress({ tutorialStep: -4 })!.tutorialStep, 0);
+    assert.ok(!("tutorialStep" in sanitizeProgress({ cash: 1 })!));
+    assert.strictEqual(resolveTutorialStep({}), 8);
+    assert.strictEqual(resolveTutorialStep({ tutorialStep: 0 }), 0);
+    assert.strictEqual(resolveTutorialStep({ tutorialStep: 5.9 }), 5);
+  });
+
+  it("bounds the daily login streak and timed boosts", () => {
+    const now = Date.now();
+    const out = sanitizeProgress({
+      dailyDay: 9.8, dailyClaimedAt: now + 1e12, boosts: { power: now + 1e12, cash: now + 1000, bogus: 5 },
+    })!;
+    assert.strictEqual(out.dailyDay, 7);
+    assert.ok(out.dailyClaimedAt! <= now + 11 * 60 * 1000);
+    assert.ok(out.boosts!.power <= now + 24 * 60 * 60 * 1000 + 1000);
+    assert.ok(out.boosts!.cash >= now + 900 && out.boosts!.cash <= now + 1100);
+    assert.ok(!("bogus" in out.boosts!));
+    assert.deepStrictEqual(sanitizeProgress({ dailyDay: -3, boosts: "x" })!.boosts, {});
   });
 });

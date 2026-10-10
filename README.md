@@ -35,7 +35,7 @@ extra players get a new room. `userId` is the Bloxity id; ids starting `guest-` 
 | `leaderboard` | `{ power, rebirths, leaves }`, rows `{ id, name, value }`, top 10 (#1 row also carries `avatar`) |
 
 Persisted keys (`src/sanitize.ts`): `cash power leaves level xp xpNext rebirths bag sellLocked
-discovered vacuumOwned vacuum auraOwned aura upgrades`. Room state (`WorldState.players`) syncs
+discovered vacuumOwned vacuum playSeconds giftClaimed auraOwned aura upgrades`. Room state (`WorldState.players`) syncs
 pose, vacuum, aura, avatar, name and the leaderboard stats (`power rebirths leaves`).
 
 The game is client-authoritative: the server only enforces shape and bounds on saves. The id lists

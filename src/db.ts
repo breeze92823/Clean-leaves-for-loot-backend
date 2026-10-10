@@ -29,9 +29,18 @@ export interface PlayerDoc {
   discovered?: string[];
   vacuumOwned?: string[];
   vacuum?: string;
+  playSeconds?: number; // total time played; unlocks the free gift vacuum
+  giftClaimed?: boolean;
   auraOwned?: string[];
   aura?: string | null;
   upgrades?: Record<string, number>;
+  dailyDay?: number; // last claimed day of the 7-day daily login streak (0 = none yet)
+  dailyClaimedAt?: number; // epoch ms of that claim
+  boosts?: Record<string, number>; // timed boosts: id -> epoch ms they expire
+  // Onboarding progress (constants.ts TUTORIAL_DONE_STEP = finished). Only ever moves forward
+  // ($max in WorldRoom.ts saveProgress). A doc without the field predates the tutorial and
+  // reads as finished (sanitize.ts resolveTutorialStep), so existing players never see it.
+  tutorialStep?: number;
   version: number;
   updatedAt: Date;
 }

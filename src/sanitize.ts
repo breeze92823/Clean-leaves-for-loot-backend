@@ -1,6 +1,7 @@
 import {
   CURRENCY_MAX, REBIRTH_MAX, LEVEL_MAX, BAG_SAVE_MAX, DISCOVERED_MAX, LOCKED_MAX, ITEM_VALUE_MAX, TEXT_MAX,
-  RARITIES, UPGRADE_MAX, VACUUM_IDS, AURA_IDS,
+  RARITIES, UPGRADE_MAX, PLAY_SECONDS_MAX, VACUUM_IDS, AURA_IDS,
+  DAILY_DAY_MAX, BOOST_IDS, BOOST_MAX_AHEAD_MS, CLOCK_SLACK_MS, TUTORIAL_DONE_STEP,
 } from "./constants.js";
 import type { LootDoc, PlayerDoc } from "./db.js";
 
@@ -53,6 +54,14 @@ function sanitizeUpgrades(raw: unknown): Record<string, number> {
   return out;
 }
 
+// { power: 1.7e12, ... } -> known boost ids with an integer expiry, never further ahead than BOOST_MAX_AHEAD_MS.
+function sanitizeBoosts(raw: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!isObject(raw)) return out;
+  for (const id of BOOST_IDS) if (finite(raw[id])) out[id] = clampInt(raw[id] as number, Date.now() + BOOST_MAX_AHEAD_MS);
+  return out;
+}
+
 // The game is client-authoritative -- no server-side gameplay validation. What IS enforced:
 // shape and bounds, so a malformed payload can never corrupt this player's own Mongo document.
 // A forged number can only ever affect the sender's own save and their leaderboard rows.
@@ -70,9 +79,22 @@ export function sanitizeProgress(raw: unknown): Partial<PlayerDoc> | null {
   if (raw.discovered !== undefined) out.discovered = sanitizeNames(raw.discovered, DISCOVERED_MAX);
   if (raw.vacuumOwned !== undefined) out.vacuumOwned = sanitizeIds(raw.vacuumOwned, VACUUM_IDS);
   if (typeof raw.vacuum === "string" && VACUUM_IDS.includes(raw.vacuum)) out.vacuum = raw.vacuum;
+  if (finite(raw.playSeconds)) out.playSeconds = clampInt(raw.playSeconds, PLAY_SECONDS_MAX);
+  if (typeof raw.giftClaimed === "boolean") out.giftClaimed = raw.giftClaimed;
   if (raw.auraOwned !== undefined) out.auraOwned = sanitizeIds(raw.auraOwned, AURA_IDS);
   if (raw.aura === null) out.aura = null;
   else if (typeof raw.aura === "string" && AURA_IDS.includes(raw.aura)) out.aura = raw.aura;
   if (raw.upgrades !== undefined) out.upgrades = sanitizeUpgrades(raw.upgrades);
+  if (finite(raw.dailyDay)) out.dailyDay = clampInt(raw.dailyDay, DAILY_DAY_MAX);
+  if (finite(raw.dailyClaimedAt)) out.dailyClaimedAt = clampInt(raw.dailyClaimedAt, Date.now() + CLOCK_SLACK_MS);
+  if (raw.boosts !== undefined) out.boosts = sanitizeBoosts(raw.boosts);
+  if (finite(raw.tutorialStep)) out.tutorialStep = clampInt(raw.tutorialStep, TUTORIAL_DONE_STEP);
   return out;
+}
+
+// What loadProgress sends down as tutorialStep: a doc that predates the tutorial belongs to a
+// player who was never shown it, so it reads as finished. New accounts get a doc with an explicit
+// step (WorldRoom.ts persistAvatar / saveProgress) or no doc at all (noProgress -> client starts at 0).
+export function resolveTutorialStep(doc: Partial<PlayerDoc>): number {
+  return finite(doc.tutorialStep) ? clampInt(doc.tutorialStep, TUTORIAL_DONE_STEP) : TUTORIAL_DONE_STEP;
 }

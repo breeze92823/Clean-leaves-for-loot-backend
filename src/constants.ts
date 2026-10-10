@@ -51,6 +51,20 @@ export const VACUUM_IDS: readonly string[] = [
 ];
 export const AURA_IDS: readonly string[] = ["interstellar", "static", "cinderveil", "shardfall", "slipstream", "frostfire"];
 
+// Daily login (client config.js DAILY): a 7-day streak. `dailyClaimedAt` is an epoch-ms stamp that can
+// never be in the future (beyond clock slack); timed boosts (client state.boosts) expire at an epoch-ms
+// stamp at most BOOST_MAX_AHEAD_MS from now.
+export const DAILY_DAY_MAX = 7;
+export const BOOST_IDS: readonly string[] = ["power", "cash"];
+export const BOOST_MAX_AHEAD_MS = 24 * 60 * 60 * 1000;
+export const CLOCK_SLACK_MS = 10 * 60 * 1000;
+
+// Client src/tutorial.js: the onboarding runs steps 0..TUTORIAL_DONE_STEP (8 = finished).
+export const TUTORIAL_DONE_STEP = 8;
+
+// Saved play time cap (s): ~1 year, far above the 50 min the free gift needs.
+export const PLAY_SECONDS_MAX = 31_536_000;
+
 // The client's per-browser fallback id for players who are not signed in to Bloxity.
 // Guests are never persisted.
 export const GUEST_ID_PREFIX = "guest-";

@@ -27,7 +27,9 @@ function fakePlayersCollection(seed: PlayerDoc[] = []) {
       const existing = docs.get(filter._id);
       if (!existing && !options?.upsert) return { modifiedCount: 0 };
       const base = existing ?? ({ _id: filter._id, ...(update.$setOnInsert ?? {}) } as PlayerDoc);
-      docs.set(filter._id, { ...base, ...(update.$set ?? {}) } as PlayerDoc);
+      const next: any = { ...base, ...(update.$set ?? {}) };
+      for (const [k, v] of Object.entries<number>(update.$max ?? {})) next[k] = Math.max(next[k] ?? -Infinity, v);
+      docs.set(filter._id, next as PlayerDoc);
       return { modifiedCount: 1 };
     },
     find(_filter: any) {
@@ -179,6 +181,41 @@ describe("WorldRoom", () => {
     assert.deepStrictEqual(doc.vacuumOwned, ["battery", "gas"]);
     assert.strictEqual(room.state.players.get(c.sessionId)!.rebirths, 1);
     assert.strictEqual(room.state.players.get(c.sessionId)!.power, 33);
+  });
+
+  it("keeps the tutorial for new accounts, hides it from legacy saves and never moves it back", async () => {
+    const fake = fakePlayersCollection([
+      { _id: "old", username: "Veteran", cash: 5, version: 1, updatedAt: new Date() }, // predates the tutorial
+      { _id: "mid", username: "Midway", tutorialStep: 3, version: 1, updatedAt: new Date() },
+    ]);
+    __setPlayersForTest(fake);
+    const room = await colyseus.createRoom<WorldState>("world", {});
+    const sent = new Map<string, any>();
+    const orig = (room as any).loadProgress.bind(room);
+    (room as any).loadProgress = (c: any, userId: string, ...rest: any[]) => {
+      const send = c.send.bind(c);
+      c.send = (type: string, msg: any) => {
+        if (type === "progress" || type === "noProgress") sent.set(userId, { type, msg });
+        send(type, msg);
+      };
+      return orig(c, userId, ...rest);
+    };
+    await colyseus.connectTo(room, { userId: "old", username: "Veteran" });
+    const mid = await colyseus.connectTo(room, { userId: "mid", username: "Midway" });
+    const fresh = await colyseus.connectTo(room, { userId: "fresh", username: "Fresh" });
+    await until(() => sent.size >= 3);
+    assert.strictEqual(sent.get("old").msg.tutorialStep, 8); // finished: never shown
+    assert.strictEqual(sent.get("mid").msg.tutorialStep, 3);
+    assert.strictEqual(sent.get("fresh").type, "noProgress"); // new account: client starts at 0
+
+    // First save of a new account creates its doc at its step; stale saves cannot go backwards.
+    fresh.send("saveProgress", { cash: 1, tutorialStep: 2 });
+    await until(() => fake.docs.get("fresh")?.tutorialStep === 2);
+    fresh.send("saveProgress", { cash: 2, tutorialStep: 1 });
+    await until(() => fake.docs.get("fresh")?.cash === 2);
+    assert.strictEqual(fake.docs.get("fresh")!.tutorialStep, 2);
+    mid.send("saveProgress", { tutorialStep: 99 });
+    await until(() => fake.docs.get("mid")!.tutorialStep === 8);
   });
 
   it("sends a returning account its saved progress, and noProgress to a new one", async () => {
