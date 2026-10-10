@@ -41,6 +41,9 @@ export interface PlayerDoc {
   // ($max in WorldRoom.ts saveProgress). A doc without the field predates the tutorial and
   // reads as finished (sanitize.ts resolveTutorialStep), so existing players never see it.
   tutorialStep?: number;
+  // The controls guide (WASD/Space/mouse...) was completed. New docs start false (WorldRoom.ts
+  // persistAvatar); a doc without the field belongs to an existing player and reads as done.
+  controlsDone?: boolean;
   version: number;
   updatedAt: Date;
 }

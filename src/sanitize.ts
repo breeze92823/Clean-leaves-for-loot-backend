@@ -89,6 +89,7 @@ export function sanitizeProgress(raw: unknown): Partial<PlayerDoc> | null {
   if (finite(raw.dailyClaimedAt)) out.dailyClaimedAt = clampInt(raw.dailyClaimedAt, Date.now() + CLOCK_SLACK_MS);
   if (raw.boosts !== undefined) out.boosts = sanitizeBoosts(raw.boosts);
   if (finite(raw.tutorialStep)) out.tutorialStep = clampInt(raw.tutorialStep, TUTORIAL_DONE_STEP);
+  if (raw.controlsDone === true) out.controlsDone = true; // only ever moves forward
   return out;
 }
 
@@ -97,4 +98,10 @@ export function sanitizeProgress(raw: unknown): Partial<PlayerDoc> | null {
 // step (WorldRoom.ts persistAvatar / saveProgress) or no doc at all (noProgress -> client starts at 0).
 export function resolveTutorialStep(doc: Partial<PlayerDoc>): number {
   return finite(doc.tutorialStep) ? clampInt(doc.tutorialStep, TUTORIAL_DONE_STEP) : TUTORIAL_DONE_STEP;
+}
+
+// What loadProgress sends down as controlsDone: only a doc explicitly created as "not done yet"
+// shows the controls guide; older docs read as done.
+export function resolveControlsDone(doc: Partial<PlayerDoc>): boolean {
+  return typeof doc.controlsDone === "boolean" ? doc.controlsDone : true;
 }

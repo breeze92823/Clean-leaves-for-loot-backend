@@ -43,10 +43,10 @@ describe("sanitizeProgress", () => {
   });
 
   it("bounds the tutorial step and reads a doc without one as finished", () => {
-    assert.strictEqual(sanitizeProgress({ tutorialStep: 99 })!.tutorialStep, 8);
+    assert.strictEqual(sanitizeProgress({ tutorialStep: 99 })!.tutorialStep, 9);
     assert.strictEqual(sanitizeProgress({ tutorialStep: -4 })!.tutorialStep, 0);
     assert.ok(!("tutorialStep" in sanitizeProgress({ cash: 1 })!));
-    assert.strictEqual(resolveTutorialStep({}), 8);
+    assert.strictEqual(resolveTutorialStep({}), 9);
     assert.strictEqual(resolveTutorialStep({ tutorialStep: 0 }), 0);
     assert.strictEqual(resolveTutorialStep({ tutorialStep: 5.9 }), 5);
   });

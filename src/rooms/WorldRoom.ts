@@ -15,7 +15,7 @@ import {
   WORLD_BOUNDS,
 } from "../constants.js";
 import { getPlayers, type PlayerDoc } from "../db.js";
-import { sanitizeProgress, resolveTutorialStep } from "../sanitize.js";
+import { sanitizeProgress, resolveTutorialStep, resolveControlsDone } from "../sanitize.js";
 
 const finite = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n);
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
@@ -128,7 +128,8 @@ export class WorldRoom extends Room<{ state: WorldState }> {
             // Display name comes from this connection's own PlayerState, not `msg`.
             $set: { ...rest, username: p.username || "Player", ...(p.avatar ? { avatar: p.avatar } : {}), updatedAt: new Date() },
             ...(tutorialStep !== undefined && { $max: { tutorialStep } }),
-            $setOnInsert: { version: 1 },
+            // A brand-new doc still owes the controls guide (a $set of controlsDone would conflict).
+            $setOnInsert: { version: 1, ...(rest.controlsDone === undefined && { controlsDone: false }) },
           },
           { upsert: true },
         );
@@ -175,7 +176,7 @@ export class WorldRoom extends Room<{ state: WorldState }> {
     players
       // A doc born here belongs to a brand-new account: it starts the tutorial at step 0 (a doc with
       // no tutorialStep is a legacy save and reads as finished).
-      .updateOne({ _id: userId }, { $set: { avatar: p.avatar, username: p.username || "Player", updatedAt: new Date() }, $setOnInsert: { version: 1, tutorialStep: 0 } }, { upsert: true })
+      .updateOne({ _id: userId }, { $set: { avatar: p.avatar, username: p.username || "Player", updatedAt: new Date() }, $setOnInsert: { version: 1, tutorialStep: 0, controlsDone: false } }, { upsert: true })
       .catch((err) => console.warn("[WorldRoom] avatar save failed", err));
   }
 
@@ -269,7 +270,7 @@ export class WorldRoom extends Room<{ state: WorldState }> {
       client.send("noProgress", { serverTime: Date.now() });
       return;
     }
-    const live = { ...(sanitizeProgress(doc) ?? {}), tutorialStep: resolveTutorialStep(doc) };
+    const live = { ...(sanitizeProgress(doc) ?? {}), tutorialStep: resolveTutorialStep(doc), controlsDone: resolveControlsDone(doc) };
     this.applyLive(p, live);
     // serverTime lets the client judge daily-login days / boost expiry by the server clock.
     client.send("progress", { ...live, serverTime: Date.now() });

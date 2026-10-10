@@ -204,7 +204,7 @@ describe("WorldRoom", () => {
     const mid = await colyseus.connectTo(room, { userId: "mid", username: "Midway" });
     const fresh = await colyseus.connectTo(room, { userId: "fresh", username: "Fresh" });
     await until(() => sent.size >= 3);
-    assert.strictEqual(sent.get("old").msg.tutorialStep, 8); // finished: never shown
+    assert.strictEqual(sent.get("old").msg.tutorialStep, 9); // finished: never shown
     assert.strictEqual(sent.get("mid").msg.tutorialStep, 3);
     assert.strictEqual(sent.get("fresh").type, "noProgress"); // new account: client starts at 0
 
@@ -215,7 +215,7 @@ describe("WorldRoom", () => {
     await until(() => fake.docs.get("fresh")?.cash === 2);
     assert.strictEqual(fake.docs.get("fresh")!.tutorialStep, 2);
     mid.send("saveProgress", { tutorialStep: 99 });
-    await until(() => fake.docs.get("mid")!.tutorialStep === 8);
+    await until(() => fake.docs.get("mid")!.tutorialStep === 9);
   });
 
   it("sends a returning account its saved progress, and noProgress to a new one", async () => {
