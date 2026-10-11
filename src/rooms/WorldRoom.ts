@@ -9,6 +9,7 @@ import {
   LEADERBOARD_ROWS,
   NAME_MAX,
   POSE_MAX,
+  WORLDS,
   RECONNECT_SECONDS,
   ROOM_MAX_CLIENTS,
   VACUUM_IDS,
@@ -29,8 +30,8 @@ function sanitizeName(raw: unknown): string {
 }
 
 // One board per stat, matching the three boards in the hub (client props.js: Power, Rebirths,
-// Leaves Cleaned).
-const LEADERBOARD_STATS = ["power", "rebirths", "leaves"] as const;
+// Leaves Cleaned, Level).
+const LEADERBOARD_STATS = ["power", "rebirths", "leaves", "level"] as const;
 type LeaderboardStat = (typeof LEADERBOARD_STATS)[number];
 // `avatar` (Bloxity avatar JSON) is only set on a board's #1 row.
 type LeaderboardRow = { id: string; name: string; value: number; avatar?: string };
@@ -83,6 +84,7 @@ export class WorldRoom extends Room<{ state: WorldState }> {
       if (finite(msg?.yaw)) p.yaw = msg.yaw;
       if (finite(msg?.speed01)) p.speed01 = clamp(msg.speed01, 0, 1);
       if (typeof msg?.grounded === "boolean") p.grounded = msg.grounded;
+      if (typeof msg?.world === "string" && WORLDS.includes(msg.world)) p.world = msg.world;
       if (msg?.pose === null) p.pose = "";
       else if (typeof msg?.pose === "string" && msg.pose.length <= POSE_MAX) p.pose = msg.pose;
     },
@@ -199,6 +201,7 @@ export class WorldRoom extends Room<{ state: WorldState }> {
     if (patch.power !== undefined) p.power = patch.power;
     if (patch.rebirths !== undefined) p.rebirths = patch.rebirths;
     if (patch.leaves !== undefined) p.leaves = patch.leaves;
+    if (patch.level !== undefined) p.level = patch.level;
   }
 
   // Drops a session's per-connection bookkeeping.
@@ -294,11 +297,12 @@ export class WorldRoom extends Room<{ state: WorldState }> {
         power: p.power,
         rebirths: p.rebirths,
         leaves: p.leaves,
+        level: p.level,
       });
     });
 
     const players = getPlayers();
-    const payload = { power: [], rebirths: [], leaves: [] } as LeaderboardPayload;
+    const payload = { power: [], rebirths: [], leaves: [], level: [] } as LeaderboardPayload;
 
     for (const stat of LEADERBOARD_STATS) {
       // Online rows first: a connected player's live value is more current than their last save.

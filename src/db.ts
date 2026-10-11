@@ -70,6 +70,7 @@ export async function connectDb(): Promise<void> {
       await players.createIndex({ power: -1 });
       await players.createIndex({ rebirths: -1 });
       await players.createIndex({ leaves: -1 });
+      await players.createIndex({ level: -1 });
     } catch (err) {
       console.warn("[db] failed to create leaderboard indexes:", err);
     }

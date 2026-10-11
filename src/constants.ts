@@ -8,6 +8,9 @@ export const SPAWN = { x: 0, y: 0.3, z: 0 };
 // with a little slack: a forged pose cannot put a player outside the world for everyone else to see.
 export const WORLD_BOUNDS = { minX: -445, maxX: 35, minZ: -35, maxZ: 35, minY: -40, maxY: 200 };
 
+// Worlds a player can be in (client config.js WORLDS).
+export const WORLDS = ["autumn", "winter"];
+
 // Longest accepted strings.
 export const NAME_MAX = 64;
 export const POSE_MAX = 32;

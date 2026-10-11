@@ -15,6 +15,8 @@ export const PlayerState = schema(
     speed01: t.float64().default(0), // 0..1 gait factor -- purely cosmetic
     grounded: t.boolean().default(true),
     pose: t.string().default(""), // client animation name ("" = none), e.g. "blow"
+    // Which world the player is in (client config.js WORLDS); players only see others in their world.
+    world: t.string().default("autumn"),
     // Equipped vacuum id (client config.js VACUUMS), "" = default; drawn in the player's hands.
     vacuum: t.string().default(""),
     // Equipped aura id (client config.js AURAS), "" = none.
@@ -26,6 +28,7 @@ export const PlayerState = schema(
     power: t.float64().default(0),
     rebirths: t.float64().default(0),
     leaves: t.float64().default(0),
+    level: t.float64().default(1),
   },
   "PlayerState",
 );

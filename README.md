@@ -32,11 +32,11 @@ extra players get a new room. `userId` is the Bloxity id; ids starting `guest-` 
 | `progress` | the saved document (hydrates `state`) |
 | `noProgress` | new account, guest, or no Mongo — keep the local state (and push it) |
 | `serverError` | the saved document could not be read; the client must not overwrite it |
-| `leaderboard` | `{ power, rebirths, leaves }`, rows `{ id, name, value }`, top 10 (#1 row also carries `avatar`) |
+| `leaderboard` | `{ power, rebirths, leaves, level }`, rows `{ id, name, value }`, top 10 (#1 row also carries `avatar`) |
 
 Persisted keys (`src/sanitize.ts`): `cash power leaves level xp xpNext rebirths bag sellLocked
 discovered vacuumOwned vacuum playSeconds giftClaimed auraOwned aura upgrades`. Room state (`WorldState.players`) syncs
-pose, vacuum, aura, avatar, name and the leaderboard stats (`power rebirths leaves`).
+pose, vacuum, aura, avatar, name and the leaderboard stats (`power rebirths leaves level`).
 
 The game is client-authoritative: the server only enforces shape and bounds on saves. The id lists
 and caps in `src/constants.ts` (`VACUUM_IDS`, `AURA_IDS`, `UPGRADE_MAX`, `RARITIES`, `SPAWN`,
